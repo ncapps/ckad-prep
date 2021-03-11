@@ -20,6 +20,9 @@ First, create the namespace.
 
 ```bash
 $ kubectl create namespace ckad-prep
+
+# Setting a context and namespace
+$ sudo kubectl config set-context default --namespace=ckad-prep
 ```
 
 Next, create the Pod in the new namespace.
@@ -139,3 +142,51 @@ namespace "ckad-prep" deleted
 
 </p>
 </details>
+
+## Lecture Notes
+### Kubernetes Object Structure
+1. API Version: v1, apps/v1, ...
+2. Kind: Pod, Deployment, ...
+3. Metadata: Name, Namespace, Labels, ...
+4. Spec: Desired state
+5. Status: Actual state
+
+### Imperative Object Management
+```sh
+# Create namespace
+$ k create namespace ckad
+
+# Create pod
+$ k run nginx --image=nginx --restart=Never -n ckad
+```
+
+### Declarative Object Management
+```sh
+# Create manifest file with kubectl
+$ k run nginx --image=nginx --restart=Never --dry-run=client -o yaml > nginx-pod.yaml
+
+# Create pod from manifest
+$ k create -f nginx-pod.yaml
+```
+
+## Understanding Pods
+- A pod is a wrapper around one or many containers
+- Pod Creation Flow: kubectl -> API server -> etcd -> Scheduler -> Kubelet -> Pod -> docker
+
+## Pod Lifecycle Phases
+- Pending: The Pod has been accepted by the k8s system, but one or more of the container images has not been created
+- Running: At least one container is still running, or is in the process of staring or restarting
+- Succeeded: All containers in Pod terminated successfully
+- Failed: Containers in Pod terminated, at least one failed with an error
+- Unknown: State of the Pod could not be obtained
+
+## Inspecting and Configuring Pods
+```sh
+$ k describe pods nginx | grep Status:
+
+# Get logs
+$ k logs nginx
+
+# Connect to a container in a pod
+k exec nginx -it -- /bin/sh
+```
