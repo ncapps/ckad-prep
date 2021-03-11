@@ -25,7 +25,7 @@ Create the ConfigMap and point to the text file upon creation.
 ```bash
 $ kubectl create configmap db-config --from-env-file=config.txt
 configmap/db-config created
-$ kubectl run backend --image=nginx --restart=Never -o yaml --dry-run > pod.yaml
+$ kubectl run backend --image=nginx --restart=Never -o yaml --dry-run=client > pod.yaml
 ```
 
 The final YAML file should look similar to the following code snippet.
@@ -88,7 +88,7 @@ secret/db-credentials created
 $ kubectl get secrets
 NAME              TYPE      DATA   AGE
 db-credentials    Opaque    1      26s
-$ kubectl run backend --image=nginx --restart=Never -o yaml --dry-run > pod.yaml
+$ kubectl run backend --image=nginx --restart=Never -o yaml --dry-run=client > pod.yaml
 ```
 
 Edit the YAML file and create an environment that reads the relevant key from the secret.
@@ -147,7 +147,7 @@ DB_PASSWORD=passwd
 Start by creating the Pod definition as YAML file.
 
 ```bash
-$ kubectl run secured --image=nginx --restart=Never -o yaml --dry-run > secured.yaml
+$ kubectl run secured --image=nginx --restart=Never -o yaml --dry-run=client > secured.yaml
 ```
 
 Edit the YAML file, add a volume and a volume mount. Add a security context with the relevant group ID.
@@ -220,6 +220,7 @@ First create the namespace and the resource quota in the namespace.
 
 ```bash
 $ kubectl create namespace rq-demo
+$ sudo kubectl config set-context default --namespace=rq-demo
 $ kubectl create -f rq.yaml --namespace=rq-demo
 resourcequota/app created
 $ kubectl describe quota --namespace=rq-demo
@@ -325,3 +326,39 @@ eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiw
 
 </p>
 </details>
+
+## Additional Notes
+### Centralized Configuration Data
+- Injects runtime configuration through object references
+- Pod -> ConfigMap (key/value) OR Secret (key/value: base64)
+
+### Creating and Mounting ConfigMaps
+```sh
+# Literal values
+$ k create configmap db-config --from-literal=db=staging
+
+# Single file with environment variables
+$ k create configmap db-config --from-env-file=config.env
+
+# File or directory
+$ k create configmap db-config --from-file=config.txt
+```
+
+### Creating Secrets
+```sh
+# Literal vlaues
+$ k create secret generic db-creds --from-literal=pwd=password123
+
+# File containing environment variables
+$ k create secret generic db-creds --from-env-file=secret.env
+
+# SSH key file
+$ k create secret generic db-creds --from-file=ssh-privatekey=~/.ssh/id_rsa
+
+# Creating secrets declaratively
+# Value has to be base64-encoded manually
+$ echo -n 'password123' | base64
+```
+
+## Defining Resource Boundaries
+- Defines # of Pods, CPU, and memoery usage per Namespace
