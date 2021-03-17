@@ -175,7 +175,7 @@ $ k create -f nginx-pod.yaml
 
 ## Pod Lifecycle Phases
 - Pending: The Pod has been accepted by the k8s system, but one or more of the container images has not been created
-- Running: At least one container is still running, or is in the process of staring or restarting
+- Running: At least one container is still running, or is in the process of starting or restarting
 - Succeeded: All containers in Pod terminated successfully
 - Failed: Containers in Pod terminated, at least one failed with an error
 - Unknown: State of the Pod could not be obtained

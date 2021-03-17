@@ -81,3 +81,134 @@ $ kubectl exec adapter --container=transformer -it -- /bin/sh
 
 </p>
 </details>
+
+## Defining and Running Multiple Containers in a Pod
+- Defining multiple containers with a shared container lifecycle and resources
+
+```sh
+# Get logs of container 1
+$ k logs busybox --container=c1
+
+# Log into container 2
+$ k exec busybox -it --container=c2 -- /bin/sh
+```
+
+## Multi-Container Patterns
+- Only need to understand patterns on a high-levl
+- Recommended book: Kubernetes Patterns
+
+- Init container: Initialization logic before main application containers
+- Sidecar; Enhance logic of the main application container; often shares resources like a volume
+- Adapter; Standardizes and normalizes application output read by external monitoring service
+- Ambassador; Proxy for main application container
+
+## Init Container Example
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: www
+  labels:
+    app: www
+spec:
+  initContainers:
+  - name: download
+    image: axeclbr/git
+    command:
+    - git
+    - clone
+    - https://github.com/mdn/beginner-html-site-scripted
+    - /var/lib/data
+    volumeMounts:
+    - mountPath: /var/lib/data
+      name: source
+  containers:
+  - name: run
+    image: docker.io/centos/httpd
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - mountPath: /var/www/html
+      name: source
+  volumes:
+  - emptyDir: {}
+    name: source
+```
+
+## Sidecar Example
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-app
+spec:
+  containers:
+  - name: app
+    image: docker.io/centos/httpd    1
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - mountPath: /var/www/html       3
+      name: git
+  - name: poll
+    image: axeclbr/git               2
+    volumeMounts:
+    - mountPath: /var/lib/data       3
+      name: git
+    env:
+    - name: GIT_REPO
+      value: https://github.com/mdn/beginner-html-site-scripted
+    command:
+    - "sh"
+    - "-c"
+    - "git clone $(GIT_REPO) . && watch -n 600 git pull"
+    workingDir: /var/lib/data
+  volumes:
+  - emptyDir: {}
+    name: git
+```
+
+## Adapter Example
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: random-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: random-generator
+  template:
+    metadata:
+      labels:
+        app: random-generator
+    spec:
+      containers:
+      - image: k8spatterns/random-generator:1.0
+        name: random-generator
+        env:
+        - name: LOG_FILE
+          value: /logs/random.log
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /logs
+          name: log-volume
+      # --------------------------------------------
+      - image: k8spatterns/random-generator-exporter
+        name: prometheus-adapter
+        env:
+        - name: LOG_FILE
+          value: /logs/random.log
+        ports:
+        - containerPort: 9889
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /logs
+          name: log-volume
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+```
