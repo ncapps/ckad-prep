@@ -165,3 +165,10 @@ Thu May 9 23:59:11 UTC 2019
 
 </p>
 </details>
+
+## Container Health
+- Probes can detect and correct failures
+- **Readiness Probes:** Is the application ready to serve requests?
+- HTTP probes are common for web applications
+- **Liveness Probes:** Is the application still working?
+- An event log can be queried with a custom bash command
